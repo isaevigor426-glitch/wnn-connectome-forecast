@@ -4,7 +4,6 @@ Forecasting two-sided execution prices from 20,000-step sequences
 (112 features, targets `t0, t1 ∈ [-2, 2]`). Metric: `|y|`-weighted
 Pearson correlation.
 
-> **Status:** work in progress. See [Status](#status) below.
 > Team project, 4 people. Started 2025-11.
 
 ## Problem
