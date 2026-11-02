@@ -1,0 +1,19 @@
+# Data
+data/
+*.parquet
+*.npy
+*.npz
+
+# Models
+*.pt
+*.pth
+*.onnx
+*.zip
+
+# Python
+__pycache__/
+.ipynb_checkpoints/
+.venv/
+
+# OS
+.DS_Store
