@@ -1,95 +1,139 @@
 # Alpha Connectome — recurrent ensembles for order-book forecasting
 
-Team solution for the **Wunder Fund Alpha Connectome** challenge (November 2026, ~5 800 teams).
-The task: from a stream of anonymised order-book features of two instruments, predict two indicators of
-the future price move of one of them, one row at a time, under a 60-minute single-core CPU limit.
+Team solution for the **Wunder Fund Alpha Connectome** competition (November 2026).
+From a causal stream of **112 anonymised features** describing two instruments, predict two indicators of the future price movement of instrument `i0`.
 
-**Result:** public score **0.6571** (organisers' baseline 0.5935), place 471 of 5 838 on the public leaderboard, with an ensemble of 3 GRU and
-2 LSTM networks running in a custom numba inference engine.
+**Best public score: 0.65709** (organisers' baseline: 0.59353); **public leaderboard snapshot: 471 / 5,838 teams**. The best submission combined **3 GRUs + 2 LSTMs** in a custom **Numba CPU inference engine**.
+These are *public* leaderboard results, not a verified final private ranking.
 
-## The problem in brief
+## Task and constraints
 
-- 12 480 sequences × 20 000 steps × 112 features (quantile-normalised prices, volumes and trades of two
-  instruments, plus 8 hidden columns). Steps 0–98 are warm-up.
-- Targets `t0`, `t1` ∈ [−2, 2]. Metric: **|y|-weighted Pearson correlation over all scored rows of all
-  sequences at once**, averaged over the two targets.
-- Inference is a Python callback per row: ~39 M calls, 1 CPU core, 60 minutes, deterministic.
+| Item | Specification |
+|---|---|
+| Data | `train`: 10,607 sequences; `valid`: 1,873 sequences; 20,000 time steps each |
+| Input | 112 features per step: price-like, volume-like and trade-related features for `i0`/`i1`, plus `a0`–`a7` |
+| Targets | `t0`, `t1` — undisclosed indicators of the future movement of **`i0`** |
+| Metric | Mean of two **global, \|target\|-weighted Pearson correlations** on scored rows; targets and predictions clipped to `[-2, 2]` |
+| Causality | Current and previous rows only; 99 warm-up steps; state reset between independent sequences |
+| Test-time limit | About 39.4 million rows; 1 CPU core; no GPU; 60 minutes; deterministic predictions |
 
-## What mattered (and what we learned)
+## Results: what changed
 
-![Public score over the competition](docs/img/progress.png)
+![Competition public leaderboard progress](docs/img/progress.png)
 
-| Step | Public score | Why it works |
+The following are **observed public submissions**, not a perfectly controlled ablation study. Changing a model, dataset, or blend can affect the score simultaneously.
+
+| Submitted approach | Public WP | Concrete change |
+|---|---:|---|
+| Organisers' baseline GRU | 0.59353 | Reference submission; output clipping also matters for its raw scale |
+| GRU, 2 layers × 128 units | 0.63988 | Independently trained causal recurrent regressor |
+| GRU, 2 × 128; 6,573 training sequences | 0.64896 | 5,000 train + 1,573 labeled valid sequences; the train-only comparison scored 0.64340 |
+| Two-GRU ensemble | 0.65426 | Standard two-layer GRU + GRU with **112 current + 112 first-difference features**, an input projection and MLP output head |
+| Three-GRU ensemble | 0.65545 | The two distinct GRUs above combined with another two-layer GRU |
+| Ensemble including activity-selected GRU | 0.65635 | Added a GRU trained on high price-event-activity sequences |
+| Five-GRU blend | 0.65673 | A later ensemble incorporating additional GRU variants |
+| **Three GRUs + two LSTMs** | **0.65709** | Final blend: 3 GRUs (standard, difference/MLP, active-data) + 2 two-layer LSTMs |
+
+![Single-model and ensemble submissions](docs/img/models.png)
+
+**Interpretation:** the strongest recorded standalone model was a two-layer **LSTM (0.65260)**. The five-model blend reached **0.65709**. This is consistent with the value of combining models that make partly different errors; it is not proof that every added model improved the score individually.
+
+## Final ensemble: actual architecture
+
+The five-member structure was verified from the final submission's packed model metadata and weights (`mods`, `meta`, `weights.npz`), not inferred from contributor names.
+
+| Member | Input and layers | Why it differs |
 |---|---|---|
-| Organisers' baseline GRU | 0.5935 | — |
-| First own GRU | 0.6399 | — |
-| Train on `valid` as well | 0.6490 | `valid` is a different slice of data and the test resembles it (train only: 0.6434) |
-| First ensemble with Andrew's models | 0.6555 | Averaging models with different errors |
-| + GRU trained on the most *active* sequences | 0.6563 | Activity (share of price-change steps) is higher in `valid`/test; quiet sequences carry little signal |
-| 3 active GRUs + Andrew's 2 models | 0.6567 | More diverse members |
-| + 2 LSTMs (float16 weights in the engine) | **0.6571** | LSTMs are stronger on scored rows, GRUs on all rows; the mix is best |
+| **GRU A** | 112 raw inputs → GRU(128) → GRU(128) → Linear(2) | Fine-tuned baseline-shaped model |
+| **GRU B** | `[x_t, x_t − x_(t−1)]` (224 features) → normalisation/clip → Linear(96) + SiLU → 2 × GRU(128) → MLP(224 → 64 → 2) | Explicit first differences; output head also sees the current projected features |
+| **GRU C** | 112 raw inputs → 2 × GRU(128) → Linear(2) | Trained with high-activity-sequence selection |
+| **LSTM D and E** | Each: 112 raw inputs → 2 × LSTM(128) → Linear(2) | Different learned weights, distinct recurrent cell type from the GRUs |
 
-![Single models vs ensembles](docs/img/models.png)
+All five networks process each input row in sequence, keep their own recurrent states, and return two values. The ensemble combines their outputs with **per-target centring and standardisation**; its exported form is a fixed affine blend:
+
+$$
+\widehat y_j = c_j + \sum_{k=1}^{5} a_{kj}\,p_{kj}, \qquad j\in\{0,1\}.
+$$
+
+The coefficients and offsets are packed into `coef` and `const` in the submission. They are **not** arbitrary contributor-specific weights.
 
 ```mermaid
-flowchart LR
-    A[train + valid<br/>parquet] --> B[.npy, float16]
-    B --> C[select the 5000 most<br/>active train sequences<br/>per family + valid]
-    C --> D[GRU x3]
-    C --> E[LSTM x2]
-    F[Andrew's 2 models] --> G
-    D --> G[numba engine<br/>float16 weights,<br/>one call per row]
-    E --> G
-    G --> H[standardise and average<br/>-> t0, t1]
+flowchart TB
+    X["One row: 112 features + previous state"]
+    X --> G1["GRU A: raw inputs, 2 x 128"]
+    X --> G2["GRU B: raw + first differences, MLP + 2 x 128"]
+    X --> G3["GRU C: raw inputs, active-data training"]
+    X --> L["LSTM D/E: two 2 x 128 recurrent models"]
+    G1 --> N["Numba engine: 1 compiled inference call per row"]
+    G2 --> N
+    G3 --> N
+    L --> N
+    N --> B["Standardise and affine blend -> t0, t1"]
 ```
 
-Findings about the data that shaped these decisions:
+## Data analysis and validation
 
-- **Discrete target.** Values are `k·u` with a per-sequence unit `u ∈ {0.1254, 0.2413, 0.4685, 0.6569}`
-  (four "families"), clipped to ±2. The family is identifiable from the first 99 steps (99.9 %).
-- **Event clock.** The target changes *only* on steps where the price columns of instrument 0 change
-  (all 22 at once). In event time the target behaves like a sum of the next 2–3 price moves.
-- **Train/valid shift.** A classifier separates `train` and `valid` sequences with AUC 0.995 (mostly by
-  volume levels); `valid` is markedly more active (0.37 vs 0.28 price events per step).
-- **Honest validation.** A 300-sequence hold-out is noisy (±0.003). Under a distribution shift the right
-  local test is *train → valid*, not a random hold-out from the training slice.
+![Distribution shift between train and valid](docs/img/shift.png)
 
-Details, including the long list of ideas that did **not** work, are in [REPORT.md](REPORT.md); all figures are built by
-[`docs/figures.py`](docs/figures.py) from the small tables in `docs/results/` and walked through in
-[`notebooks/09_results_and_figures.ipynb`](notebooks/09_results_and_figures.ipynb).
+- **Target families:** within each sequence, targets take values on a discrete scale `k × u`, where `u ∈ {0.1254, 0.2413, 0.4685, 0.6569}`. This suggested an event-based structure, but the targets' exact economic meaning is undisclosed.
+- **Event time:** target values changed at steps associated with simultaneous changes in the 22 `i0` price-like columns. Modelling the next few price-change events was explored but did not beat the recurrent ensemble.
+- **Distribution shift:** a train-vs-valid classifier reached **ROC-AUC 0.995**; the observed price-event rate was approximately **0.28 (train) vs 0.37 (valid)**. Random hold-outs within a single split could therefore give an over-optimistic comparison.
+- **Active sequences:** the useful late-stage training recipe selected about **5,000 high-activity train sequences**, accounting for the target-family mix, and combined them with labeled valid data. The train → valid experiments supported this approach; simply matching train sequences to valid did **not** work as well.
 
-## Repository layout
+![Permutation importance of feature groups](docs/img/importance.png)
 
-```
+Permutation importance for one GRU indicated that **`i0` volume-like and price-like groups** held most of the predictive signal. Because the feature columns are anonymised, index order must not be treated as known order-book depth.
+
+![Small local ablations compared to seed variance](docs/img/experiments.png)
+
+A 3,000-sequence, three-epoch GRU experiment showed that several feature and architecture tweaks produced changes close to the **0.0017 range across three baseline seeds**. This is why improvements need validation across seeds and distribution splits, not just one run.
+
+## Engineering: inference on one CPU core
+
+![Score versus test runtime](docs/img/runtime.png)
+
+- **Training:** models were trained offline in PyTorch; the platform did not allow GPU inference.
+- **Inference:** a custom Numba JIT engine runs all five recurrent models in **one compiled call per input row**, rather than repeatedly invoking separate PyTorch or ONNX graphs.
+- **Optimisation:** matrix–vector products operate on transposed weight matrices; recurrent gates use compiled numerical approximations; weight matrices are stored as `float16`, while most arithmetic is carried out in `float32`.
+- **Runtime:** the best submission (`final5_mx16_submission.zip`) ran in **43 min 32 s**. Another five-model submission with two LSTMs took **56 min 46 s**. **These versions used different LSTM checkpoints as well as different weight formats**, so their runtime difference must not be attributed solely to `float16` without a controlled benchmark.
+- **Correctness:** the exported runtime performs a numerical self-test against stored reference predictions and resets recurrent state between sequences.
+
+## Project structure
+
+```text
 src/wnn/
-  metric.py       competition metric, streaming accumulator, family detection, family-mix re-weighting
-  features.py     causal event features, sequence activity
-  data.py         splits, active-sequence selection, family weights, parquet → .npy
-  models.py       GRU / LSTM networks, ONNX step wrapper
-  train.py        training loop (weighted loss, truncated BPTT, OneCycle) + CLI
-  export_onnx.py  one-row ONNX export with a numerical check
-notebooks/        exploratory analysis and experiments (as run in Colab)
-tests/            unit tests for the metric, features and data selection
+  metric.py       Weighted Pearson metric and streaming evaluation
+  features.py     Causal event features and sequence activity
+  data.py         Sequence splits, active selection, parquet -> .npy
+  models.py       GRU/LSTM PyTorch definitions and ONNX step wrapper
+  train.py        Weighted loss, truncated BPTT and training CLI
+  export_onnx.py  Export and numerical validation
+notebooks/        Colab experiment history (00-09)
+docs/results/     Small source tables used by the figures
+docs/figures.py  Regenerate all six figures
+docs/img/         Rendered PNG charts
+REPORT.md         Technical findings, including failed experiments
 ```
 
-## Reproduce
+## Reproduce the included research code
 
 ```bash
-pip install -e ".[train,dev]"
+pip install -e ".[train,dev,figures]"
 pytest -q
+python docs/figures.py
 
-# data: download the starter pack from the competition page, then convert, e.g.
+# Download the competition training files separately, then convert them:
 python -c "from wnn.data import parquet_to_npy; import numpy as np; \
            parquet_to_npy('train.parquet', 'data/train', np.arange(10607))"
 
-# one LSTM of the final ensemble (≈35 min on a T4)
+# Example training command for an active-sequence LSTM:
 python -m wnn.train --data data --cell lstm --active 5000 --seed 0 --out lstm_s0.pt
 ```
 
-The final submission ran all models inside a numba engine (one compiled call per row, float16 weight
-matrices, ~33 µs per model per row). The engine was written by a teammate; the LSTM support and the
-ensembling tooling are described in the report.
+The public repository contains the training/analysis code and recorded experimental results. **Rebuilding the exact final submission additionally requires the trained checkpoints and separate packed Numba inference code/weights**, which are not part of the repository archive.
+
+For the complete research log, see [REPORT.md](REPORT.md) and [the notebook index](notebooks/README.md).
 
 ## Team
 
-Four people — see [AUTHORS.md](AUTHORS.md).
+Four contributors; see [AUTHORS.md](AUTHORS.md).
