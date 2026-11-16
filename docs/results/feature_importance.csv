@@ -1,0 +1,16 @@
+group,columns,all_rows,is_scored
+none (reference),,0.498,0.657
+instrument 0 prices,0-21,0.455,0.619
+instrument 0 volumes,22-43,0.401,0.559
+instrument 0 trades,44-51,0.470,0.637
+instrument 1 prices,52-73,0.498,0.655
+instrument 1 volumes,74-95,0.496,0.655
+instrument 1 trades,96-103,0.476,0.631
+a0,104,0.497,0.655
+a1,105,0.498,0.657
+a2,106,0.499,0.655
+a3,107,0.499,0.656
+a4,108,0.498,0.657
+a5,109,0.498,0.656
+a6,110,0.483,0.649
+a7,111,0.495,0.654

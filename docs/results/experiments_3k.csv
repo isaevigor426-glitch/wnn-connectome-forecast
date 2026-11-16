@@ -1,0 +1,11 @@
+experiment,is_scored,f3,all_rows,minutes
+"baseline, seed 0",0.6670,0.3981,0.4923,8.4
+"baseline, seed 1",0.6656,0.3952,0.4916,7.9
+"baseline, seed 2",0.6673,0.4005,0.4910,7.7
+Pearson + weighted MSE loss,0.6677,0.3993,0.4924,7.9
+family re-weighting to valid mix,0.6681,0.3986,0.4937,7.8
+GRU 2x256,0.6667,0.3919,0.4940,14.2
+event features,0.6662,0.3944,0.4924,9.6
+"dropout 0.2, weight decay 1e-4",0.6653,0.3946,0.4922,8.0
+input minus rolling mean (500),0.6671,0.3976,0.4934,19.4
+train sequences most similar to valid,0.6645,0.3900,0.4931,8.1
