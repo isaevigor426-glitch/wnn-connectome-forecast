@@ -1,10 +1,10 @@
-# Alpha Connectome - recurrent ensembles for order-book forecasting
+# Alpha Connectome — recurrent ensembles for order-book forecasting
 
 Team solution for the **Wunder Fund Alpha Connectome** challenge (November 2026, ~5 800 teams).
 The task: from a stream of anonymised order-book features of two instruments, predict two indicators of
 the future price move of one of them, one row at a time, under a 60-minute single-core CPU limit.
 
-**Result:** public score **0.6571** (organisers' baseline 0.5935; top-10%), with an ensemble of 3 GRU and
+**Result:** public score **0.6571** (organisers' baseline 0.5935), place 471 of 5 838 on the public leaderboard, with an ensemble of 3 GRU and
 2 LSTM networks running in a custom numba inference engine.
 
 ## The problem in brief
@@ -17,14 +17,31 @@ the future price move of one of them, one row at a time, under a 60-minute singl
 
 ## What mattered (and what we learned)
 
+![Public score over the competition](docs/img/progress.png)
+
 | Step | Public score | Why it works |
 |---|---|---|
 | Organisers' baseline GRU | 0.5935 | — |
-| Loss `\|y\|·(p − y)²` instead of MSE | 0.640 | Its minimiser is the optimum of the \|y\|-weighted correlation |
-| More data, ensembles of GRUs | 0.6555 | Averaging models with different errors |
-| Train on all of `valid` | 0.6561 | `valid` is a different slice of data; the test resembles it (+0.0056 for a single model) |
-| Train on the most *active* sequences of `train` | 0.6567 | Activity (share of price-change steps) is higher in `valid`/test; quiet sequences carry little signal |
-| Add LSTMs (float16 weights in the engine) | **0.6571** | LSTMs are stronger on scored rows, GRUs on all rows; the mix is best |
+| First own GRU | 0.6399 | — |
+| Train on `valid` as well | 0.6490 | `valid` is a different slice of data and the test resembles it (train only: 0.6434) |
+| First ensemble with Andrew's models | 0.6555 | Averaging models with different errors |
+| + GRU trained on the most *active* sequences | 0.6563 | Activity (share of price-change steps) is higher in `valid`/test; quiet sequences carry little signal |
+| 3 active GRUs + Andrew's 2 models | 0.6567 | More diverse members |
+| + 2 LSTMs (float16 weights in the engine) | **0.6571** | LSTMs are stronger on scored rows, GRUs on all rows; the mix is best |
+
+![Single models vs ensembles](docs/img/models.png)
+
+```mermaid
+flowchart LR
+    A[train + valid<br/>parquet] --> B[.npy, float16]
+    B --> C[select the 5000 most<br/>active train sequences<br/>per family + valid]
+    C --> D[GRU x3]
+    C --> E[LSTM x2]
+    F[Andrew's 2 models] --> G
+    D --> G[numba engine<br/>float16 weights,<br/>one call per row]
+    E --> G
+    G --> H[standardise and average<br/>-> t0, t1]
+```
 
 Findings about the data that shaped these decisions:
 
@@ -37,7 +54,9 @@ Findings about the data that shaped these decisions:
 - **Honest validation.** A 300-sequence hold-out is noisy (±0.003). Under a distribution shift the right
   local test is *train → valid*, not a random hold-out from the training slice.
 
-Details, including the long list of ideas that did **not** work, are in [REPORT.md](REPORT.md).
+Details, including the long list of ideas that did **not** work, are in [REPORT.md](REPORT.md); all figures are built by
+[`docs/figures.py`](docs/figures.py) from the small tables in `docs/results/` and walked through in
+[`notebooks/09_results_and_figures.ipynb`](notebooks/09_results_and_figures.ipynb).
 
 ## Repository layout
 
