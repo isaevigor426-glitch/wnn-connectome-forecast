@@ -1,0 +1,9 @@
+recipe,scored_wp,all_rows_wp,series,notes
+GRU baseline (3-seed mean),0.6666333333,0.4916333333,GRU,baseline mean from three seeds
+GRU + family reweighting,0.6681,0.4937,GRU,reweight to valid family mix
+GRU active subset (seed A),0.6687,0.4983,GRU,top 3000 active train sequences
+GRU active subset (seed B),0.6703,0.4985,GRU,top 3000 active train sequences
+GRU active + family weights,0.6707,0.4998,GRU,active sequences and family reweighting
+GRU activity-matched subset,0.6663,0.4958,GRU,matched valid activity distribution
+LSTM active + family weights,0.6720,0.4948,LSTM,same active recipe as GRU
+GRU + 2 LSTM blend,0.6748,0.5026,Ensemble,local blend of GRU and LSTM models
