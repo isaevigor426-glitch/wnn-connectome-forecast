@@ -7,7 +7,7 @@ Wunder Fund **Alpha Connectome** challenge, November 2026. Team of four; final p
 
 - **Data.** `train` 10 607 and `valid` 1 873 sequences of 20 000 steps; 112 anonymised features per step:
   22 "price", 22 volume and 8 trade columns for each of two instruments, plus 8 hidden columns `a0–a7`.
-  All columns are quantile-transformed to a normal shape (|x| ≤ 5.1993).
+  All columns are quantile-transformed to a normal shape (|x| ≤ 5.1993 = Φ⁻¹(10⁻⁷)).
 - **Targets.** `t0`, `t1`, indicators of the future price move of instrument 0, clipped to [−2, 2].
 - **Metric.** |y|-weighted Pearson correlation over the scored rows (`is_scored`, ≈ 9 %) of all sequences
   at once; mean over the two targets.
