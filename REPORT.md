@@ -131,7 +131,7 @@ An adversarial-validation classifier distinguishing training from validation seq
 
 This is evidence of a strong distribution shift between the supplied splits. It does **not**, by itself, prove that test has exactly the validation distribution.
 
-A random 300-sequence hold-out within the validation slice produced differences of about **0.002–0.003 WP across seeds**, often larger than the gains under investigation. A model trained exclusively on `train` scored **0.64340 public**, while a related GRU using 5,000 train sequences plus 1,573 labelled validation sequences scored **0.64896 public**. Those submissions help motivate the shift analysis, but also changed training composition and are not an isolated causal test.
+A small 300-sequence hold-out was noisy in recorded comparisons. The separate 3,000-sequence training ablations below show a **0.0017 WP** range across the three baseline seeds on the scored validation mask. A model trained exclusively on `train` scored **0.64340 public**, while a related GRU using 5,000 train sequences plus 1,573 labelled validation sequences scored **0.64896 public**. Those submissions help motivate the shift analysis, but also changed training composition and are not an isolated causal test.
 
 ### The validation strategy we converged on
 
@@ -149,25 +149,33 @@ The final training recipes could use labelled `valid` rows **because the competi
 
 ## 5. Which experiments worked?
 
-### Active-sequence selection was the clearest late-stage improvement
+### What the local experiments actually verify
 
-Activity was measured as the share of steps containing a price-change event. The hypothesis was that very quiet sequences add relatively little informative variation to the weighted objective, especially under the observed train/valid shift.
+The local 3,000-sequence GRU experiments in [`notebooks/07_shift_and_active_selection.ipynb`](notebooks/07_shift_and_active_selection.ipynb) (the cell that builds `RES2`) retain the printed metrics for three baseline seeds and six alternative training/feature configurations. The exact numbers are also transcribed in [`docs/results/experiments_3k.csv`](docs/results/experiments_3k.csv).
 
-The local screening used a 3,000-sequence training setup; the final production-style recipe selected approximately **5,000 high-activity training sequences**, accounted for family proportions and incorporated additional allowed labelled validation sequences.
+![Locally logged GRU ablations: scored and all validation rows](docs/img/report_local_validation.png)
 
-![Local active-sequence selection experiments](docs/img/report_local_validation.png)
-
-| Recipe | Scored-row WP | All-row WP | Reading |
+| Local GRU experiment | Scored-row WP (300 valid sequences) | All-row WP (1,873 valid sequences) | Interpretation |
 |---|---:|---:|---|
-| Reference GRU, mean of three seeds | **0.6666** | 0.4916 | Baseline variation: scored **0.6656–0.6673** |
-| Reweight families to validation proportions | 0.6681 | 0.4937 | Small, not always decisive gain |
-| 3,000 most-active sequences (two seeds) | **0.6687 / 0.6703** | 0.4983 / 0.4985 | Positive in these runs |
-| Most-active + family weights | **0.6707** | **0.4998** | Strongest GRU recipe in this comparison |
-| Match train activity distribution to valid | 0.6663 | 0.4958 | Worse than selecting the most active |
-| LSTM with the active recipe | **0.6720** | 0.4948 | Better on *scored* rows, lower on *all* rows than the GRU recipe |
-| GRU + two LSTM (local blend) | **0.6748** | **0.5026** | Complementarity of architectures in this setup |
+| Baseline, mean across three seeds | **0.6666** | 0.4916 | Scored WP range **0.6656–0.6673** |
+| Weighted MSE + Pearson loss term | 0.6677 | 0.4924 | Small result within the baseline seed spread |
+| Reweight target families to validation mix | 0.6681 | 0.4937 | Higher in this run, not tested across multiple seeds here |
+| Wider two-layer GRU (256 hidden units) | 0.6667 | 0.4940 | Increased computation without a clear scored-row gain |
+| Event-derived input features | 0.6662 | 0.4924 | No improvement on scored rows |
+| Dropout 0.2 + weight decay 1e−4 | 0.6653 | 0.4922 | Lower scored-row WP |
+| Inputs plus rolling-mean deviation features | 0.6671 | 0.4934 | Result within the baseline scored-row spread |
 
-Source data: [`report_local_validation.csv`](docs/results/report_local_validation.csv) and the recorded experiments. **These are local comparisons, not public scores**; the 3,000-sequence runs do not constitute proof of private-test performance.
+**Metric populations differ:** `is_scored` WP was computed on the scoring mask for the first 300 validation sequences, whereas `all-row` WP pooled non-warm-up steps from all 1,873 validation sequences. Neither is a public-leaderboard result. The three baseline points and all alternative experiments above are traceable to preserved notebook output; the displayed baseline mean is calculated from the three seeds.
+
+### Evidence for the high-activity training recipe
+
+A price-change event was defined using changes in the 22 price-like `i0` features, and the final training code implements selection of high-activity sequences. The observed `train`/`valid` shift (about 0.28 versus 0.37 event steps) motivated this hypothesis.
+
+![Observed public submissions with activity-selected models](docs/img/report_public_selection.png)
+
+The figure above contains **actual public submission scores** from [`docs/results/submissions.csv`](docs/results/submissions.csv). The blend that added an activity-trained GRU scored **0.65635**; subsequent all-GRU and mixed GRU/LSTM submissions reached **0.65673**, **0.65689**, **0.65709** and **0.65707**. These are *different checkpoints and blends*, not a controlled test that changes only sequence selection. They support the use of that recipe in the final pipeline, but cannot establish an isolated causal benefit from activity selection.
+
+**Evidence gap explicitly removed:** the original narrative reported additional local numbers for selecting the top 3,000 active sequences, an activity-matched subset, one LSTM and a GRU+LSTM blend. Those exact numerical results were not independently recoverable from the provided notebook outputs or experimental CSV. Rather than plotting them as verified observations, this version omits them. The public submission scores for the separate LSTM and mixed ensembles remain documented below.
 
 ### Public development: architecture + data recipe + ensembling
 
@@ -207,7 +215,7 @@ The final archived solution (`final5_mx16_submission.zip`) was examined using it
 
 ### Why mix GRU and LSTM?
 
-Both process temporal dependencies, but their gating mechanisms differ. A GRU maintains a recurrent hidden state; an LSTM additionally maintains a separate cell state. Combining checkpoints of distinct recurrent cells and training recipes can reduce **correlated model errors**. The local scored/all-row comparison and best public mixed ensemble are consistent with that rationale. They do not prove that adding *any* LSTM or increasing ensemble size *always* helps.
+Both process temporal dependencies, but their gating mechanisms differ. A GRU maintains a recurrent hidden state; an LSTM additionally maintains a separate cell state. Combining checkpoints of distinct recurrent cells and training recipes can reduce **correlated model errors**. The best observed public mixed ensemble is consistent with that rationale; the available logs do not provide an independent, controlled local comparison of GRU and LSTM errors. They do not prove that adding *any* LSTM or increasing ensemble size *always* helps.
 
 ### How the predictions were combined
 
@@ -297,7 +305,7 @@ One important nuance: **difference inputs alone did not establish a stable singl
 
 - The final packed file contains **3 GRU + 2 LSTM**, combining raw and difference-feature architectures.
 - The best recorded public submission has **0.65709 WP** and passes the recorded test-time limit.
-- There was measurable **train/valid distribution shift**; selecting high-activity sequences was beneficial in the documented local setup.
+- There was measurable **train/valid distribution shift**; high-activity sequence selection was part of the higher-scoring submitted blends, but its isolated contribution was not established by the recoverable local logs.
 - Ensembling improved observed public results, while many architecture and feature-engineering ideas did not generalise consistently.
 
 ### What it does *not* support
