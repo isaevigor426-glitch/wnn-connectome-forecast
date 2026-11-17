@@ -97,6 +97,7 @@ A 3,000-sequence, three-epoch GRU experiment showed that several feature and arc
 - **Optimisation:** matrix–vector products operate on transposed weight matrices; recurrent gates use compiled numerical approximations; weight matrices are stored as `float16`, while most arithmetic is carried out in `float32`.
 - **Runtime:** the best submission (`final5_mx16_submission.zip`) ran in **43 min 32 s**. Another five-model submission with two LSTMs took **56 min 46 s**. **These versions used different LSTM checkpoints as well as different weight formats**, so their runtime difference must not be attributed solely to `float16` without a controlled benchmark.
 - **Correctness:** the exported runtime performs a numerical self-test against stored reference predictions and resets recurrent state between sequences.
+- **Code:** the engine, the ensemble builder, the pre-submit checker and the speed benchmark are in [`engine/`](engine/README.md), together with the training pipeline of GRU A and GRU B.
 
 ## Project structure
 
@@ -108,7 +109,9 @@ src/wnn/
   models.py       GRU/LSTM PyTorch definitions and ONNX step wrapper
   train.py        Weighted loss, truncated BPTT and training CLI
   export_onnx.py  Export and numerical validation
-notebooks/        Colab experiment history (00-09)
+engine/           Numba inference engine, ensemble builder, pre-submit checker, speed benchmark,
+                  training pipeline of GRU A/B (see engine/README.md)
+notebooks/        Colab experiment history, one folder per contributor (see notebooks/README.md)
 docs/results/     Small source tables used by the figures
 docs/figures.py  Regenerate all six figures
 docs/img/         Rendered PNG charts
@@ -128,9 +131,16 @@ python -c "from wnn.data import parquet_to_npy; import numpy as np; \
 
 # Example training command for an active-sequence LSTM:
 python -m wnn.train --data data --cell lstm --active 5000 --seed 0 --out lstm_s0.pt
+
+# Build and check an ensemble submission with the Numba engine (see engine/README.md):
+pip install -e ".[train,engine]"
+python engine/prepare_data.py --src valid_sub.parquet --out data/engine_valid
+python engine/build_ensemble.py --valid-dir data/engine_valid --out submissions/ens \
+    --model "a=runs/ft/epoch_0.pt@0.5" --model "b=runs/gru/best.pt@0.5"
+python engine/check_submission.py submissions/ens.zip --data valid_sub.parquet
 ```
 
-The public repository contains the training/analysis code and recorded experimental results. **Rebuilding the exact final submission additionally requires the trained checkpoints and separate packed Numba inference code/weights**, which are not part of the repository archive.
+The public repository contains the training/analysis code, the Numba inference engine with its submission tooling (`engine/`) and recorded experimental results. **Rebuilding the exact final submission additionally requires the trained checkpoints and packed weights** (and the LSTM model types added to the engine for the final submission), which are not part of the repository.
 
 For the complete research log, see [REPORT.md](REPORT.md) and [the notebook index](notebooks/README.md).
 

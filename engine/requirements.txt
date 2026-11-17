@@ -1,0 +1,9 @@
+# engine/ and its tests (the scorer image pins numba==0.67.0)
+numpy>=1.26,<3
+torch>=2.5
+pyarrow>=15.0
+numba==0.67.0
+onnx>=1.16
+onnxruntime>=1.18
+pandas>=2.0
+pytest>=8.0

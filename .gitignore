@@ -14,6 +14,10 @@ data/
 __pycache__/
 .ipynb_checkpoints/
 .venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
 
 # OS
 .DS_Store

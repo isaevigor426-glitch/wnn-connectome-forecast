@@ -26,8 +26,9 @@ This project combines data analysis, recurrent modelling, validation research an
 
 ### Andrew
 
-- Designed and implemented the high-performance **Numba CPU inference engine**, with packed weights and stateful recurrent evaluation.
-- Developed the fine-tuned baseline-shaped GRU and the GRU using input differences, a projection and an MLP output head.
+- Designed and implemented the high-performance **Numba CPU inference engine**, with packed weights and stateful recurrent evaluation, and the submission tooling around it: ensemble builder (float16 weights, self-test on load), pre-submit checker reproducing the scorer protocol, speed benchmark ([`engine/`](engine/)).
+- Developed the fine-tuned baseline-shaped GRU and the GRU using input differences, a projection and an MLP output head, including regularised versions and versions trained also on the unused part of `valid`.
+- Built the Colab training pipeline (parquet streaming, truncated BPTT over full sequences) and ran the Mamba-2 and wider-GRU experiments ([`notebooks/Andrew/`](notebooks/Andrew/)).
 - Contributed models and runtime engineering used in the final ensemble.
 
 ### Max
