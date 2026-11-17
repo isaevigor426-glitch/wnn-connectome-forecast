@@ -78,7 +78,7 @@ flowchart TB
 - **Target families:** within each sequence, targets take values on a discrete scale `k × u`, where `u ∈ {0.1254, 0.2413, 0.4685, 0.6569}`. This suggested an event-based structure, but the targets' exact economic meaning is undisclosed.
 - **Event time:** target values changed at steps associated with simultaneous changes in the 22 `i0` price-like columns. Modelling the next few price-change events was explored but did not beat the recurrent ensemble.
 - **Distribution shift:** a train-vs-valid classifier reached **ROC-AUC 0.995**; the observed price-event rate was approximately **0.28 (train) vs 0.37 (valid)**. Random hold-outs within a single split could therefore give an over-optimistic comparison.
-- **Active sequences:** the useful late-stage training recipe selected about **5,000 high-activity train sequences**, accounting for the target-family mix, and combined them with labeled valid data. The train → valid experiments supported this approach; simply matching train sequences to valid did **not** work as well.
+- **Active sequences:** the useful late-stage training recipe selected about **5,000 high-activity train sequences**, accounting for the target-family mix, and combined them with labeled valid data. It was included in higher-scoring public ensembles, but the available experiment logs do **not** isolate its effect from other model and blend changes. Earlier local scores quoted for activity-only selection were omitted from the revised report because their original calculation logs were not preserved.
 
 ![Permutation importance of feature groups](docs/img/importance.png)
 
