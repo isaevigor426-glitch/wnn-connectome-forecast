@@ -1,0 +1,10 @@
+recipe,scored_wp,all_rows_wp,experiment,source
+GRU baseline (seed 0),0.667,0.4923,"baseline, seed 0",notebooks/07_shift_and_active_selection.ipynb (run2 logs)
+GRU baseline (seed 1),0.6656,0.4916,"baseline, seed 1",notebooks/07_shift_and_active_selection.ipynb (run2 logs)
+GRU baseline (seed 2),0.6673,0.491,"baseline, seed 2",notebooks/07_shift_and_active_selection.ipynb (run2 logs)
+GRU + Pearson + weighted MSE,0.6677,0.4924,Pearson + weighted MSE loss,notebooks/07_shift_and_active_selection.ipynb (run2 logs)
+GRU + family reweighting,0.6681,0.4937,family re-weighting to valid mix,notebooks/07_shift_and_active_selection.ipynb (run2 logs)
+GRU (2 × 256),0.6667,0.494,GRU 2x256,notebooks/07_shift_and_active_selection.ipynb (run2 logs)
+GRU + event features,0.6662,0.4924,event features,notebooks/07_shift_and_active_selection.ipynb (run2 logs)
+GRU + dropout + weight decay,0.6653,0.4922,"dropout 0.2, weight decay 1e-4",notebooks/07_shift_and_active_selection.ipynb (run2 logs)
+GRU + rolling-mean features,0.6671,0.4934,input minus rolling mean (500),notebooks/07_shift_and_active_selection.ipynb (run2 logs)
