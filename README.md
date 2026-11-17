@@ -1,21 +1,22 @@
-# Alpha Connectome — recurrent ensembles for order-book forecasting
+# Alpha Connectome — recurrent ensembles for order-book forecasting 
 
 Team solution for the **Wunder Fund Alpha Connectome** competition (November 2026).
 From a causal stream of **112 anonymised features** describing two instruments, predict two indicators of the future price movement of instrument `i0`.
 
 **Best public score: 0.65709** (organisers' baseline: 0.59353); **public leaderboard snapshot: 471 / 5,838 teams**. The best submission combined **3 GRUs + 2 LSTMs** in a custom **Numba CPU inference engine**.
-These are *public* leaderboard results, not a verified final private ranking.
+These are *public* leaderboard results, not a verified final private ranking.     
 
 ## Task and constraints
 
-| Item | Specification |
-|---|---|
-| Data | `train`: 10,607 sequences; `valid`: 1,873 sequences; 20,000 time steps each |
-| Input | 112 features per step: price-like, volume-like and trade-related features for `i0`/`i1`, plus `a0`–`a7` |
-| Targets | `t0`, `t1` — undisclosed indicators of the future movement of **`i0`** |
-| Metric | Mean of two **global, \|target\|-weighted Pearson correlations** on scored rows; targets and predictions clipped to `[-2, 2]` |
-| Causality | Current and previous rows only; 99 warm-up steps; state reset between independent sequences |
-| Test-time limit | About 39.4 million rows; 1 CPU core; no GPU; 60 minutes; deterministic predictions |
+
+| Item            | Specification                                                                                                                |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Data            | `train`: 10,607 sequences; `valid`: 1,873 sequences; 20,000 time steps each                                                  |
+| Input           | 112 features per step: price-like, volume-like and trade-related features for`i0`/`i1`, plus `a0`–`a7`                      |
+| Targets         | `t0`, `t1` — undisclosed indicators of the future movement of **`i0`**                                                      |
+| Metric          | Mean of two**global, \|target\|-weighted Pearson correlations** on scored rows; targets and predictions clipped to `[-2, 2]` |
+| Causality       | Current and previous rows only; 99 warm-up steps; state reset between independent sequences                                  |
+| Test-time limit | About 39.4 million rows; 1 CPU core; no GPU; 60 minutes; deterministic predictions                                           |
 
 ## Results: what changed
 
@@ -23,16 +24,17 @@ These are *public* leaderboard results, not a verified final private ranking.
 
 The following are **observed public submissions**, not a perfectly controlled ablation study. Changing a model, dataset, or blend can affect the score simultaneously.
 
-| Submitted approach | Public WP | Concrete change |
-|---|---:|---|
-| Organisers' baseline GRU | 0.59353 | Reference submission; output clipping also matters for its raw scale |
-| GRU, 2 layers × 128 units | 0.63988 | Independently trained causal recurrent regressor |
-| GRU, 2 × 128; 6,573 training sequences | 0.64896 | 5,000 train + 1,573 labeled valid sequences; the train-only comparison scored 0.64340 |
-| Two-GRU ensemble | 0.65426 | Standard two-layer GRU + GRU with **112 current + 112 first-difference features**, an input projection and MLP output head |
-| Three-GRU ensemble | 0.65545 | The two distinct GRUs above combined with another two-layer GRU |
-| Ensemble including activity-selected GRU | 0.65635 | Added a GRU trained on high price-event-activity sequences |
-| Five-GRU blend | 0.65673 | A later ensemble incorporating additional GRU variants |
-| **Three GRUs + two LSTMs** | **0.65709** | Final blend: 3 GRUs (standard, difference/MLP, active-data) + 2 two-layer LSTMs |
+
+| Submitted approach                       |   Public WP | Concrete change                                                                                                           |
+| ---------------------------------------- | ----------: | ------------------------------------------------------------------------------------------------------------------------- |
+| Organisers' baseline GRU                 |     0.59353 | Reference submission; output clipping also matters for its raw scale                                                      |
+| GRU, 2 layers × 128 units               |     0.63988 | Independently trained causal recurrent regressor                                                                          |
+| GRU, 2 × 128; 6,573 training sequences  |     0.64896 | 5,000 train + 1,573 labeled valid sequences; the train-only comparison scored 0.64340                                     |
+| Two-GRU ensemble                         |     0.65426 | Standard two-layer GRU + GRU with**112 current + 112 first-difference features**, an input projection and MLP output head |
+| Three-GRU ensemble                       |     0.65545 | The two distinct GRUs above combined with another two-layer GRU                                                           |
+| Ensemble including activity-selected GRU |     0.65635 | Added a GRU trained on high price-event-activity sequences                                                                |
+| Five-GRU blend                           |     0.65673 | A later ensemble incorporating additional GRU variants                                                                    |
+| **Three GRUs + two LSTMs**               | **0.65709** | Final blend: 3 GRUs (standard, difference/MLP, active-data) + 2 two-layer LSTMs                                           |
 
 ![Single-model and ensemble submissions](docs/img/models.png)
 
@@ -42,12 +44,13 @@ The following are **observed public submissions**, not a perfectly controlled ab
 
 The five-member structure was verified from the final submission's packed model metadata and weights (`mods`, `meta`, `weights.npz`), not inferred from contributor names.
 
-| Member | Input and layers | Why it differs |
-|---|---|---|
-| **GRU A** | 112 raw inputs → GRU(128) → GRU(128) → Linear(2) | Fine-tuned baseline-shaped model |
-| **GRU B** | `[x_t, x_t − x_(t−1)]` (224 features) → normalisation/clip → Linear(96) + SiLU → 2 × GRU(128) → MLP(224 → 64 → 2) | Explicit first differences; output head also sees the current projected features |
-| **GRU C** | 112 raw inputs → 2 × GRU(128) → Linear(2) | Trained with high-activity-sequence selection |
-| **LSTM D and E** | Each: 112 raw inputs → 2 × LSTM(128) → Linear(2) | Different learned weights, distinct recurrent cell type from the GRUs |
+
+| Member           | Input and layers                                                                                                           | Why it differs                                                                   |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| **GRU A**        | 112 raw inputs → GRU(128) → GRU(128) → Linear(2)                                                                        | Fine-tuned baseline-shaped model                                                 |
+| **GRU B**        | `[x_t, x_t − x_(t−1)]` (224 features) → normalisation/clip → Linear(96) + SiLU → 2 × GRU(128) → MLP(224 → 64 → 2) | Explicit first differences; output head also sees the current projected features |
+| **GRU C**        | 112 raw inputs → 2 × GRU(128) → Linear(2)                                                                               | Trained with high-activity-sequence selection                                    |
+| **LSTM D and E** | Each: 112 raw inputs → 2 × LSTM(128) → Linear(2)                                                                        | Different learned weights, distinct recurrent cell type from the GRUs            |
 
 All five networks process each input row in sequence, keep their own recurrent states, and return two values. The ensemble combines their outputs with **per-target centring and standardisation**; its exported form is a fixed affine blend:
 
