@@ -150,3 +150,14 @@ For the complete research log, see [REPORT.md](REPORT.md) and [the notebook inde
 ## Team
 
 Four contributors; see [AUTHORS.md](AUTHORS.md).
+
+## Additional contributor notebooks: Max
+
+[Max's saved Colab notebooks and supporting source](notebooks/Max/README.md)
+include exploratory data analysis and the LSTM 2×128 training/resume pipeline,
+Numba LSTM integration, export diagnostics and honest valid300 ensemble comparisons.
+The recorded local scores are **0.661758** for LSTM and **0.663036** for
+honest3 + LSTM (**+0.002043** over honest3); these are offline family-mix validation
+scores, separate from the public leaderboard results above. The saved experiment
+history includes an unsuccessful float16 parity check and a trial ensemble that
+failed the runtime gate; it does not certify the exact final team submission.

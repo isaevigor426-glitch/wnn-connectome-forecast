@@ -1,0 +1,37 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "processor": "arm",
+  "single_thread": true,
+  "core_affinity": false,
+  "rows": 20000,
+  "gru": {
+    "microseconds_per_row": 9.819081251043826,
+    "projected_minutes_39_4M": 6.454148214892485,
+    "repeats_seconds_per_row": [
+      9.828652103897185e-06,
+      9.713962499517948e-06,
+      9.819081251043827e-06
+    ]
+  },
+  "lstm": {
+    "microseconds_per_row": 12.38443125039339,
+    "projected_minutes_39_4M": 8.158250185505798,
+    "repeats_seconds_per_row": [
+      1.2423731246963143e-05,
+      1.2384431250393391e-05,
+      1.2289820850128307e-05
+    ]
+  },
+  "lstm_gru_ratio": 1.2612617141829692,
+  "ensemble": {
+    "microseconds_per_row": 42.47710829949938,
+    "projected_minutes_39_4M": 28.106059770623688,
+    "repeats_seconds_per_row": [
+      4.2801106249680744e-05,
+      4.247710829949938e-05,
+      4.202936250367202e-05
+    ]
+  },
+  "weights_sha256": "0163adb0e3e0f7b7a457da1ba86214644dc29a91cd8718e175242e3e4213ef2b",
+  "performance_pass": false
+}

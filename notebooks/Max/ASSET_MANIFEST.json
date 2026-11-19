@@ -1,0 +1,216 @@
+{
+  "source_archive": "for_codex-20261113T133602Z-1-001.zip",
+  "source_archive_size_bytes": 266455594,
+  "source_zip_members": 16,
+  "large_assets": [
+    {
+      "source": "for_codex/valid300/valid300_M.npy",
+      "shape": [
+        300,
+        20000
+      ],
+      "dtype": "bool",
+      "size_bytes": 6000128
+    },
+    {
+      "source": "for_codex/valid300/Pb_valid300.npy",
+      "shape": [
+        300,
+        20000,
+        2
+      ],
+      "dtype": "float32",
+      "size_bytes": 48000128
+    },
+    {
+      "source": "for_codex/valid300/P_corr3k_valid300.npy",
+      "shape": [
+        300,
+        20000,
+        2
+      ],
+      "dtype": "float32",
+      "size_bytes": 48000128
+    },
+    {
+      "source": "for_codex/best_public_ens3/weights.npz",
+      "size_bytes": 1231008,
+      "arrays": {
+        "flat": {
+          "shape": [
+            5236
+          ],
+          "dtype": "float32"
+        },
+        "mats": {
+          "shape": [
+            601728
+          ],
+          "dtype": "uint16"
+        },
+        "meta": {
+          "shape": [
+            36,
+            3
+          ],
+          "dtype": "int64"
+        },
+        "mods": {
+          "shape": [
+            3,
+            4
+          ],
+          "dtype": "int64"
+        },
+        "coef": {
+          "shape": [
+            3,
+            2
+          ],
+          "dtype": "float32"
+        },
+        "const": {
+          "shape": [
+            2
+          ],
+          "dtype": "float32"
+        },
+        "selftest_x": {
+          "shape": [
+            8,
+            112
+          ],
+          "dtype": "float32"
+        },
+        "selftest_y": {
+          "shape": [
+            8,
+            2
+          ],
+          "dtype": "float32"
+        }
+      }
+    },
+    {
+      "source": "for_codex/engine_ens5ev/weights.npz",
+      "size_bytes": 2019652,
+      "arrays": {
+        "flat": {
+          "shape": [
+            8312
+          ],
+          "dtype": "float32"
+        },
+        "mats": {
+          "shape": [
+            989312
+          ],
+          "dtype": "uint16"
+        },
+        "meta": {
+          "shape": [
+            56,
+            3
+          ],
+          "dtype": "int64"
+        },
+        "mods": {
+          "shape": [
+            5,
+            4
+          ],
+          "dtype": "int64"
+        },
+        "coef": {
+          "shape": [
+            5,
+            2
+          ],
+          "dtype": "float32"
+        },
+        "const": {
+          "shape": [
+            2
+          ],
+          "dtype": "float32"
+        },
+        "selftest_x": {
+          "shape": [
+            8,
+            112
+          ],
+          "dtype": "float32"
+        },
+        "selftest_y": {
+          "shape": [
+            8,
+            2
+          ],
+          "dtype": "float32"
+        },
+        "ev_mu": {
+          "shape": [
+            8
+          ],
+          "dtype": "float64"
+        },
+        "ev_sd": {
+          "shape": [
+            8
+          ],
+          "dtype": "float64"
+        }
+      }
+    },
+    {
+      "source": "for_codex/valid300/valid300_Y.npy",
+      "shape": [
+        300,
+        20000,
+        2
+      ],
+      "dtype": "float32",
+      "size_bytes": 48000128
+    },
+    {
+      "source": "for_codex/valid300/P_gru6573_valid300.npy",
+      "shape": [
+        300,
+        20000,
+        2
+      ],
+      "dtype": "float32",
+      "size_bytes": 48000128
+    },
+    {
+      "source": "for_codex/valid300/P_gruall_valid300.npy",
+      "shape": [
+        300,
+        20000,
+        2
+      ],
+      "dtype": "float32",
+      "size_bytes": 48000128
+    },
+    {
+      "source": "for_codex/valid300/P_gruh256_valid300.npy",
+      "shape": [
+        300,
+        20000,
+        2
+      ],
+      "dtype": "float32",
+      "size_bytes": 48000128
+    },
+    {
+      "source": "for_codex/valid300/P_gruev_valid300.npy",
+      "shape": [
+        300,
+        20000,
+        2
+      ],
+      "dtype": "float32",
+      "size_bytes": 48000128
+    }
+  ]
+}

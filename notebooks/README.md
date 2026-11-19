@@ -34,3 +34,15 @@ Runs of the [`engine/`](../engine/README.md) pipeline (comments in Russian); `da
 | `day10_more_data` | training also on the unused part of `valid` |
 | `day11_final` | blend weights, final three-model submission |
 | `day12_all_data` | the same members trained on all labeled data |
+
+## [Max](Max/README.md)
+
+Saved Colab research notebooks with their supporting LSTM pipeline and tests.
+
+| notebook | topic |
+|---|---|
+| [`analysis`](Max/analysis.ipynb) | exploratory analysis of targets, event timing, features and sequence families |
+| [`LSTM_Colab_T4`](Max/LSTM_Colab_T4.ipynb) | LSTM 2×128 training/resume, honest valid300 comparisons, float32 export diagnostics and trial ensembles |
+
+See [Max's README](Max/README.md) for recorded scores, export limitations and
+instructions for using the supporting `src/`, `scripts/`, `tests/` and team references.
